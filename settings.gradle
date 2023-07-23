@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 rootProject.name = "AndroidProject"
 include ':app'
 include ':courseapp'
+include ':covid-19'
