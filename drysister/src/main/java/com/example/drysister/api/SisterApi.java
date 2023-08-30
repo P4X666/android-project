@@ -1,12 +1,9 @@
 package com.example.drysister.api;
 
-import static android.os.PersistableBundle.readFromStream;
-
 import android.util.Log;
 
 import com.example.drysister.bean.Sister;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.ByteArrayOutputStream;
@@ -23,10 +20,9 @@ public class SisterApi {
      * 查询妹子信息
      */
     public Sister fetchSister() {
-        String fetchUrl = BASE_URL;
         Sister sister = null;
         try {
-            URL url = new URL(fetchUrl);
+            URL url = new URL(BASE_URL);
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setConnectTimeout(5000);
             conn.setRequestMethod("GET");
@@ -49,9 +45,8 @@ public class SisterApi {
      * 解析返回Json数据的方法
      */
     public Sister parseSister(String content) throws Exception {
-        Sister sister = null;
         JSONObject object = new JSONObject(content);
-        sister = new Sister();
+        Sister sister = new Sister();
         sister.setId(object.getInt("id"));
         sister.setWidth(object.getInt("width"));
         sister.setHeight(object.getInt("height"));

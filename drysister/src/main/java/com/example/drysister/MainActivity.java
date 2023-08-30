@@ -3,28 +3,38 @@ package com.example.drysister;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.example.drysister.api.SisterApi;
 import com.example.drysister.bean.Sister;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
-    private ImageView         showImg;
-    private int               curPos = 0;
-    private PictureLoader     loader;
-    private Thread sisterThread;
-
-    private ArrayList<Sister> data;
-    private SisterApi sisterApi;
+    private       ImageView         showImg;
+    private       int               curPos = 0;
+    private       PictureLoader     loader;
+    private       ExecutorService   executorService;
+    private       ArrayList<Sister> data;
+    private       SisterApi         sisterApi;
+    private final int               pictureLimit = 5;
+    TextView textView;
+    private String TAG = "MainActivity sister";
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         loader = new PictureLoader();
+        textView = findViewById(R.id.pictureNum);
+        executorService = Executors.newFixedThreadPool(1);
         initData();
         initUI();
     }
@@ -32,9 +42,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void initData() {
         data = new ArrayList<>();
         sisterApi = new SisterApi();
-        for (int i = 0; i < 10; i++) {
-            fetchSister();
-        }
+        fetchSister();
     }
 
     private void initUI() {
@@ -46,46 +54,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override public void onClick(View v) {
         int id = v.getId();
         if(id == R.id.btn_show){
-            if (curPos > 10) {
+            if(data.get(curPos) != null){
+                loader.load(showImg, data.get(curPos).getUrl());
+            }
+            curPos++;
+            textView.setText("这是第" + curPos + "张图片");
+            if (curPos >= data.size()) {
                 curPos = 0;
             }
-            if(!data.isEmpty() && data.size() > curPos){
-                loader.load(showImg, data.get(curPos).getUrl());
-                curPos++;
-            }
         }
     }
-    private void updateData(Sister sister){
-        data.add(sister);
+    private void updateData(ArrayList<Sister> sisters){
+        Handler uiThread = new Handler(Looper.getMainLooper());
+        uiThread.post(() -> {
+            data.clear();
+            data.addAll(sisters);
+        });
     }
     private void fetchSister() {
-        sisterThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
+        executorService.submit(() -> {
+            ArrayList<Sister> lastSisters = new ArrayList<>();
+            for (int i = 0; i < pictureLimit; i++) {
                 Sister sister = sisterApi.fetchSister();
                 if (sister != null) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            updateData(sister);
-                        }
-                    });
+                    lastSisters.add(sister);
                 }
             }
+            Log.e(TAG, "fetchSister: " + lastSisters.size());
+            updateData(lastSisters);
         });
-        sisterThread.start();
-    }
 
-    private void cancelFetchSister() {
-        if (sisterThread != null) {
-            sisterThread.interrupt();
-            sisterThread = null;
-        }
     }
 
     @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        cancelFetchSister();
+    protected void onStop() {
+        super.onStop();
+
+        if (!executorService.isShutdown()) {
+            executorService.shutdownNow();
+        }
     }
 }
