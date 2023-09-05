@@ -20,8 +20,14 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:text="@string/pre"
+        android:id="@+id/btn_previous"
+        />
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:text="@string/next"
-        android:id="@+id/btn_show"
+        android:id="@+id/btn_next"
         />
     <TextView
         android:layout_width="match_parent"
